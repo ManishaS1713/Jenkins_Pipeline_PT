@@ -6,7 +6,12 @@ pipeline {
         PERF_EMAIL = 'manishas@ivavsys.com'
         PT_REPO = 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'
     }
-
+    
+stage('Clean Workspace') {
+    steps {
+        cleanWs()
+    }
+}
     stages {
 
         stage('Verify JMeter') {
