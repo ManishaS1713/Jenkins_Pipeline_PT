@@ -8,7 +8,15 @@ pipeline {
         PT_REPO = 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'
 
     }
-    
+	
+    stages {
+
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+		
     stages {
  
      stage('Verify JMeter') {
