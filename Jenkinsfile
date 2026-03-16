@@ -7,13 +7,15 @@ pipeline {
         PT_REPO = 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'
     }
     
-stage('Clean Workspace') {
-    steps {
-        cleanWs()
-    }
-}
-    stages {
 
+    stages {
+        
+        stage('Clean Workspace') {
+            steps {
+                    cleanWs()
+            }
+        }
+        
         stage('Verify JMeter') {
             steps {
                 bat '"C:\\Jmeter\\apache-jmeter-5.6.3\\bin\\jmeter.bat" -v'
