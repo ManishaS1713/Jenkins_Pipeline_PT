@@ -69,7 +69,13 @@ pipeline {
                 archiveArtifacts artifacts: 'performance-result.jtl, performance-report.zip', fingerprint: true
             }
         }
-
+        
+        stage('Check Files') {
+            steps {
+                bat 'dir'
+            }
+        }
+        
         stage('Email After Performance') {
             steps {
                 emailext(
