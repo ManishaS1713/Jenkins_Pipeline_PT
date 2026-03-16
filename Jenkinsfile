@@ -45,14 +45,19 @@ pipeline {
         }
 
         stage('Email After Performance') {
-            steps {
-                emailext(
-                    subject: "JMeter Performance Test Report",
-                    body: "Performance Test Execution Completed",
-                    to: "${PERF_EMAIL}"
-                )
-            }
-        }
+    steps {
+        emailext(
+            subject: "JMeter Performance Test Report",
+            body: """
+            Performance Test Completed.
+
+            Please check attached HTML report.
+            """,
+            to: "${PERF_EMAIL}",
+            attachmentsPattern: 'performance-report/**'
+        )
+    }
+}
 
     }
 
