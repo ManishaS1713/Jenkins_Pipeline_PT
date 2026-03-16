@@ -9,17 +9,9 @@ pipeline {
 
     stages {
 
-        stage('Clean Workspace') {
-            steps {
-                cleanWs()
-            }
-        }
-
         stage('Verify JMeter') {
             steps {
-                bat """
-                "C:\\Jmeter\\apache-jmeter-5.6.3\\bin\\jmeter.bat" -v
-                """
+                bat '"C:\\Jmeter\\apache-jmeter-5.6.3\\bin\\jmeter.bat" -v'
             }
         }
 
@@ -44,21 +36,34 @@ pipeline {
             }
         }
 
+        stage('Publish HTML Report') {
+            steps {
+                publishHTML([
+                    reportDir: 'performance-report',
+                    reportFiles: 'index.html',
+                    reportName: 'JMeter Performance Report',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true,
+                    allowMissing: false
+                ])
+            }
+        }
+
         stage('Email After Performance') {
-    steps {
-        emailext(
-            subject: "JMeter Performance Test Report",
-            body: """
-            Performance Test Completed.
+            steps {
+                emailext(
+                    subject: "JMeter Performance Test Report",
+                    body: """
+Performance Test Completed.
 
-            Please check attached HTML report.
-            """,
-            to: "${PERF_EMAIL}",
-            attachmentsPattern: 'performance-report/**'
-        )
+View Report:
+${BUILD_URL}
+""",
+                    to: "${PERF_EMAIL}",
+                    attachmentsPattern: 'performance-report/index.html'
+                )
+            }
+        }
+
     }
-}
-
-    }
-
 }
