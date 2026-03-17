@@ -43,27 +43,32 @@ pipeline {
         }
 
         stage('Generate Performance Summary') {
-            steps {
-                script {
-                    def summary = bat(
-                        script: '''
-                        powershell -Command "$data = Import-Csv 'performance-result.jtl'; $total = $data.Count; $success = ($data | Where-Object {$_.success -eq 'true'}).Count; $fail = $total - $success; $avg = [math]::Round(($data | Measure-Object -Property elapsed -Average).Average,2); Write-Output ('TOTAL=' + $total); Write-Output ('SUCCESS=' + $success); Write-Output ('FAIL=' + $fail); Write-Output ('AVG=' + $avg)"
-                        ''',
-                        returnStdout: true
-                    ).trim()
+    steps {
+        script {
+            def raw = bat(
+                script: '''
+                powershell -Command "$data = Import-Csv 'performance-result.jtl'; $total = $data.Count; $success = ($data | Where-Object {$_.success -eq 'true'}).Count; $fail = $total - $success; $avg = [math]::Round(($data | Measure-Object -Property elapsed -Average).Average,2); Write-Output ('TOTAL=' + $total); Write-Output ('SUCCESS=' + $success); Write-Output ('FAIL=' + $fail); Write-Output ('AVG=' + $avg)"
+                ''',
+                returnStdout: true
+            ).trim()
 
-                    echo "Summary Output:\n${summary}"
+            echo "RAW OUTPUT:\n${raw}"
 
-                    def lines = summary.split("\\r?\\n")
-
-                    TOTAL = lines.find { it.contains('TOTAL=') }?.split('=')[1]
-                    SUCCESS = lines.find { it.contains('SUCCESS=') }?.split('=')[1]
-                    FAIL = lines.find { it.contains('FAIL=') }?.split('=')[1]
-                    AVG = lines.find { it.contains('AVG=') }?.split('=')[1]
-                }
+            // ✅ Filter only valid lines
+            def cleanLines = raw.split("\\r?\\n").findAll {
+                it.startsWith("TOTAL=") ||
+                it.startsWith("SUCCESS=") ||
+                it.startsWith("FAIL=") ||
+                it.startsWith("AVG=")
             }
-        }
 
+            TOTAL = cleanLines.find { it.startsWith("TOTAL=") }?.split("=")[1]
+            SUCCESS = cleanLines.find { it.startsWith("SUCCESS=") }?.split("=")[1]
+            FAIL = cleanLines.find { it.startsWith("FAIL=") }?.split("=")[1]
+            AVG = cleanLines.find { it.startsWith("AVG=") }?.split("=")[1]
+        }
+    }
+}
         stage('Publish HTML Report') {
             steps {
                 publishHTML([
