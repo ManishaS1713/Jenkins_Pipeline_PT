@@ -46,18 +46,9 @@ pipeline {
     steps {
         script {
             def summary = bat(
-                script: """
-                powershell -Command ^
-                "$data = Import-Csv 'performance-result.jtl'; ^
-                $total = $data.Count; ^
-                $success = ($data | Where-Object { \$_.success -eq 'true' }).Count; ^
-                $fail = $total - $success; ^
-                $avg = [math]::Round(($data | Measure-Object -Property elapsed -Average).Average,2); ^
-                Write-Output 'TOTAL=' + $total; ^
-                Write-Output 'SUCCESS=' + $success; ^
-                Write-Output 'FAIL=' + $fail; ^
-                Write-Output 'AVG=' + $avg;"
-                """,
+                script: '''
+                powershell -Command "$data = Import-Csv 'performance-result.jtl'; $total = $data.Count; $success = ($data | Where-Object {$_.success -eq 'true'}).Count; $fail = $total - $success; $avg = [math]::Round(($data | Measure-Object elapsed -Average).Average,2); Write-Output ('TOTAL=' + $total); Write-Output ('SUCCESS=' + $success); Write-Output ('FAIL=' + $fail); Write-Output ('AVG=' + $avg)"
+                ''',
                 returnStdout: true
             ).trim()
 
