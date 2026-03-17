@@ -88,7 +88,7 @@ ${BUILD_URL}
 
 HTML report attached in ZIP format.
 """,
-                    to: "${PERF_EMAIL}",
+                    to: env.PERF_EMAIL,
                     attachmentsPattern: '**/performance-report.zip',
                     mimeType: 'text/html',
                     attachLog: true
