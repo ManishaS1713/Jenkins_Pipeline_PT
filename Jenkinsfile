@@ -3,7 +3,6 @@ pipeline {
     agent any
 
     environment {
-        PERF_EMAIL = 'manishas@ivavsys.com'
         PT_REPO = 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'
     }
 
@@ -43,6 +42,37 @@ pipeline {
             }
         }
 
+        stage('Generate Performance Summary') {
+            steps {
+                script {
+                    def summary = bat(
+                        script: '''
+                        powershell -Command "
+                        $data = Import-Csv performance-result.jtl;
+
+                        $total = $data.Count;
+                        $success = ($data | Where-Object { $_.success -eq 'true' }).Count;
+                        $fail = $total - $success;
+
+                        $avg = [math]::Round(($data | Measure-Object -Property elapsed -Average).Average,2);
+
+                        Write-Output \"TOTAL=$total\"
+                        Write-Output \"SUCCESS=$success\"
+                        Write-Output \"FAIL=$fail\"
+                        Write-Output \"AVG=$avg\"
+                        "
+                        '''
+                        , returnStdout: true
+                    ).trim()
+
+                    summary.split("\\r?\\n").each {
+                        def parts = it.split("=")
+                        env[parts[0]] = parts[1]
+                    }
+                }
+            }
+        }
+
         stage('Publish HTML Report') {
             steps {
                 publishHTML([
@@ -56,42 +86,23 @@ pipeline {
             }
         }
 
-        stage('Zip HTML Report') {
-            steps {
-                bat '''
-                powershell Compress-Archive -Path performance-report -DestinationPath performance-report.zip -Force
-                '''
-            }
-        }
-
-        stage('Archive Performance Results') {
-            steps {
-                archiveArtifacts artifacts: 'performance-result.jtl, performance-report.zip', fingerprint: true
-            }
-        }
-        
-        stage('Check Files') {
-            steps {
-                bat 'dir'
-            }
-        }
-        
         stage('Email After Performance') {
             steps {
                 emailext(
                     subject: "JMeter Performance Test Report",
                     body: """
-Performance Test Execution Completed.
+<h3>Performance Test Completed ✅</h3>
 
-Jenkins Build Report:
-${BUILD_URL}
+<b>Total Requests:</b> ${TOTAL} <br>
+<b>Success:</b> ${SUCCESS} <br>
+<b>Failures:</b> ${FAIL} <br>
+<b>Avg Response Time:</b> ${AVG} ms <br>
 
-HTML report attached in ZIP format.
+<br><b>👉 View Full Report:</b><br>
+<a href="${BUILD_URL}">${BUILD_URL}</a>
 """,
-                    to: env.PERF_EMAIL,
-                    attachmentsPattern: '**/performance-report.zip',
-                    mimeType: 'text/html',
-                    attachLog: true
+                    to: 'manishas@ivavsys.com',
+                    mimeType: 'text/html'
                 )
             }
         }
