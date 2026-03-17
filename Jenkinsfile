@@ -54,12 +54,12 @@ pipeline {
 
                     echo "Summary Output:\n${summary}"
 
-                    summary.split("\\r?\\n").each {
-                        def parts = it.split("=")
-                        if(parts.length == 2){
-                            env[parts[0].trim()] = parts[1].trim()
-                        }
-                    }
+                    def lines = summary.split("\\r?\\n")
+
+                    TOTAL = lines.find { it.contains('TOTAL=') }?.split('=')[1]
+                    SUCCESS = lines.find { it.contains('SUCCESS=') }?.split('=')[1]
+                    FAIL = lines.find { it.contains('FAIL=') }?.split('=')[1]
+                    AVG = lines.find { it.contains('AVG=') }?.split('=')[1]
                 }
             }
         }
@@ -79,9 +79,10 @@ pipeline {
 
         stage('Email After Performance') {
             steps {
-                emailext(
-                    subject: "JMeter Performance Test Report",
-                    body: """
+                script {
+                    emailext(
+                        subject: "JMeter Performance Test Report",
+                        body: """
 <h3>Performance Test Completed ✅</h3>
 
 <b>Total Requests:</b> ${TOTAL} <br>
@@ -92,9 +93,10 @@ pipeline {
 <br><b>👉 View Full Report:</b><br>
 <a href="${BUILD_URL}">${BUILD_URL}</a>
 """,
-                    to: 'manishas@ivavsys.com',
-                    mimeType: 'text/html'
-                )
+                        to: 'manishas@ivavsys.com',
+                        mimeType: 'text/html'
+                    )
+                }
             }
         }
 
