@@ -6,7 +6,7 @@ pipeline {
         PT_REPO = 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'
 
         // ✅ Define Slave IPs (JMeter servers)
-        JMETER_SLAVES = '192.168.1.101,192.168.1.102'
+        JMETER_SLAVES = '192.168.1.5'
         
         // ✅ JMeter path (same path must exist on master & slaves)
         JMETER_HOME = 'C:\\Jmeter\\apache-jmeter-5.6.3\\bin'
