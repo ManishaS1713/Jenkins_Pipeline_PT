@@ -4,9 +4,7 @@ pipeline {
 
     environment {
         PT_REPO = 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'
-        JMETER_HOME = 'C:\\Jmeter\\apache-jmeter-5.6.3'
-        JMETER_BIN = "${JMETER_HOME}\\bin\\jmeter.bat"
-        JMETER_SLAVES = '192.168.1.101,192.168.1.102'
+        JMETER_SLAVES = '192.168.1.5'
     }
 
     stages {
@@ -19,10 +17,10 @@ pipeline {
 
         stage('Verify JMeter') {
             steps {
-                bat """
-                set JMETER_HOME=${JMETER_HOME}
-                "${JMETER_BIN}" -v
-                """
+                bat '''
+                SET JMETER_HOME=C:\\Jmeter\\apache-jmeter-5.6.3
+                C:\\Jmeter\\apache-jmeter-5.6.3\\bin\\jmeter.bat -v
+                '''
             }
         }
 
@@ -36,19 +34,20 @@ pipeline {
 
         stage('Run Distributed Performance Test') {
             steps {
-                bat """
-                set JMETER_HOME=${JMETER_HOME}
+                bat '''
+                SET JMETER_HOME=C:\\Jmeter\\apache-jmeter-5.6.3
 
                 IF EXIST performance-result.jtl del performance-result.jtl
                 IF EXIST performance-report rmdir /s /q performance-report
 
-                REM Run JMeter in Distributed Mode
-                "${JMETER_BIN}" -n ^
+                REM Running JMeter Distributed Test
+
+                C:\\Jmeter\\apache-jmeter-5.6.3\\bin\\jmeter.bat -n ^
                 -t prefScale.jmx ^
                 -l performance-result.jtl ^
                 -e -o performance-report ^
-                -R ${JMETER_SLAVES}
-                """
+                -R 192.168.1.5
+                '''
             }
         }
 
@@ -85,7 +84,7 @@ pipeline {
                         AVG = cleanLines.find { it.startsWith("AVG=") }?.split("=")[1]
 
                     } else {
-                        error "JMeter result file not generated. Test execution failed."
+                        error "JMeter test failed - result file not generated"
                     }
                 }
             }
