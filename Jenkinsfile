@@ -4,7 +4,7 @@ pipeline {
 
     environment {
         PT_REPO = 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'
-        JMETER_SLAVES = '192.168.1.143'
+        JMETER_SLAVES = '192.168.0.147'
     }
 
     stages {
@@ -46,7 +46,7 @@ pipeline {
                 -t prefScale.jmx ^
                 -l performance-result.jtl ^
                 -e -o performance-report ^
-                -R 192.168.1.143
+                -R 192.168.0.147
                 '''
             }
         }
