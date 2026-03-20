@@ -1,23 +1,23 @@
 pipeline {
-    agent any   // Run pipeline on any available Jenkins agent
+    agent any
 
     environment {
-        PT_REPO = 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'  // GitHub repo URL
-        JMETER_HOME = 'C:\\Jmeter\\apache-jmeter-5.6.3'  // JMeter installation path
-        SLAVE_IP = '192.168.0.147'  // Remote JMeter slave IP for distributed testing
+        PT_REPO = 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'
+        JMETER_HOME = 'C:\\Jmeter\\apache-jmeter-5.6.3'
+        SLAVE_IP = '192.168.0.147'
     }
 
     stages {
 
         stage('Clean Workspace') {
             steps {
-                cleanWs()  // Clean previous build files to avoid conflicts
+                cleanWs()  // Clean previous files
             }
         }
 
         stage('Checkout Code') {
             steps {
-                // Pull latest code (JMX + Jenkinsfile) from GitHub
+                // Pull latest code from GitHub
                 git branch: 'main',
                     url: "${PT_REPO}",
                     credentialsId: 'PT_PipelineToken'
@@ -27,7 +27,7 @@ pipeline {
         stage('Verify JMeter') {
             steps {
                 bat '''
-                // Set JMeter path and verify installation
+                REM Set JMeter path and verify installation
                 SET JMETER_HOME=%JMETER_HOME%
                 %JMETER_HOME%\\bin\\jmeter.bat -v
                 '''
@@ -37,20 +37,20 @@ pipeline {
         stage('Run Distributed Performance Test') {
             steps {
                 bat '''
-                // Set JMeter path
+                REM Set JMeter path
                 SET JMETER_HOME=%JMETER_HOME%
 
-                // Delete old result and report folders if exist
+                REM Delete old result and report
                 IF EXIST performance-result.jtl del performance-result.jtl
                 IF EXIST performance-report rmdir /s /q performance-report
 
-                // Run JMeter in non-GUI mode with distributed setup
+                REM Run JMeter distributed test
                 %JMETER_HOME%\\bin\\jmeter.bat -n ^
-                -t prefScale.jmx ^                     // Test plan
-                -l performance-result.jtl ^            // Result file
-                -e -o performance-report ^             // HTML report output
-                -R %SLAVE_IP% ^                       // Remote slave execution
-                -Jjmeter.save.saveservice.output_format=csv  // Save results in CSV
+                -t prefScale.jmx ^
+                -l performance-result.jtl ^
+                -e -o performance-report ^
+                -R %SLAVE_IP% ^
+                -Jjmeter.save.saveservice.output_format=csv
                 '''
             }
         }
@@ -58,10 +58,8 @@ pipeline {
         stage('Generate Performance Summary') {
             steps {
                 script {
-                    // Check if result file exists before processing
                     if (fileExists('performance-result.jtl')) {
 
-                        // Execute PowerShell to calculate total & successful requests
                         def output = bat(
                             script: '''
                             @echo off
@@ -70,15 +68,13 @@ pipeline {
                             returnStdout: true
                         ).trim()
 
-                        // Extract only the actual result (last line)
+                        // Extract only result line (remove CMD noise)
                         def cleanOutput = output.tokenize('\\n')[-1].trim()
 
-                        // Split values into TOTAL and SUCCESS
                         def parts = cleanOutput.split(',')
                         env.TOTAL = parts[0]
                         env.SUCCESS = parts[1]
 
-                        // Print summary in Jenkins console
                         echo "Total Requests: ${env.TOTAL}"
                         echo "Successful Requests: ${env.SUCCESS}"
                     }
@@ -88,7 +84,6 @@ pipeline {
 
         stage('Publish HTML Report') {
             steps {
-                // Publish JMeter HTML report in Jenkins UI
                 publishHTML(target: [
                     reportDir: 'performance-report',
                     reportFiles: 'index.html',
@@ -102,7 +97,6 @@ pipeline {
 
         stage('Email After Performance') {
             steps {
-                // Send email with test summary
                 emailext(
                     subject: "JMeter Test Result - Build #${BUILD_NUMBER}",
                     body: """
@@ -120,13 +114,13 @@ pipeline {
 
     post {
         always {
-            echo 'Pipeline execution completed.'  // Always runs after pipeline
+            echo 'Pipeline execution completed.'
         }
         success {
-            echo 'Performance test passed successfully!'  // On success
+            echo 'Performance test passed successfully!'
         }
         failure {
-            echo 'Performance test failed!'  // On failure
+            echo 'Performance test failed!'
         }
     }
 }
