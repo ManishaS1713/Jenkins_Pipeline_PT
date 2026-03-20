@@ -56,31 +56,38 @@ pipeline {
         }
 
         stage('Generate Performance Summary') {
-            steps {
-                script {
-                    if (fileExists('performance-result.jtl')) {
+    steps {
+        script {
+            if (fileExists('performance-result.jtl')) {
 
-                        def output = bat(
-                            script: '''
-                            @echo off
-                            powershell -Command "$data = Import-Csv 'performance-result.jtl'; $total = $data.Count; $success = ($data | Where-Object {$_.success -eq 'true'}).Count; Write-Output \"$total,$success\""
-                            ''',
-                            returnStdout: true
-                        ).trim()
+                def output = bat(
+                    script: '''
+                    @echo off
+                    powershell -Command "$data = Import-Csv 'performance-result.jtl'; $total = $data.Count; $success = ($data | Where-Object {$_.success -eq 'true'}).Count; Write-Output \"$total,$success\""
+                    ''',
+                    returnStdout: true
+                ).trim()
 
-                        // Extract only result line (remove CMD noise)
-                        def cleanOutput = output.tokenize('\\n')[-1].trim()
+                def cleanOutput = output.tokenize('\\n')[-1].trim()
 
-                        def parts = cleanOutput.split(',')
-                        env.TOTAL = parts[0]
-                        env.SUCCESS = parts[1]
+                echo "Raw Output: ${cleanOutput}"
 
-                        echo "Total Requests: ${env.TOTAL}"
-                        echo "Successful Requests: ${env.SUCCESS}"
-                    }
+                if (cleanOutput.contains(',')) {
+                    def parts = cleanOutput.split(',')
+                    env.TOTAL = parts[0]
+                    env.SUCCESS = parts[1]
+                } else {
+                    // fallback if parsing fails
+                    env.TOTAL = cleanOutput
+                    env.SUCCESS = "0"
                 }
+
+                echo "Total Requests: ${env.TOTAL}"
+                echo "Successful Requests: ${env.SUCCESS}"
             }
         }
+    }
+}
 
         stage('Publish HTML Report') {
             steps {
