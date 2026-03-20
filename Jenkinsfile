@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        PT_REPO = 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'
         JMETER_HOME = 'C:\\Jmeter\\apache-jmeter-5.6.3'
         SLAVE_IP = '192.168.0.147'
     }
@@ -16,8 +17,9 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git credentialsId: 'PT_PipelineToken',
-                    url: 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'
+                git branch: 'main',
+                    url: "${PT_REPO}",
+                    credentialsId: 'PT_PipelineToken'
             }
         }
 
@@ -94,7 +96,8 @@ pipeline {
                     <p><b>Successful Requests:</b> ${env.SUCCESS}</p>
                     <p>Check detailed report in Jenkins.</p>
                     """,
-                    to: "your-email@example.com"
+                    to: "manishas@ivavsys.com",
+                    mimeType: 'text/html'
                 )
             }
         }
