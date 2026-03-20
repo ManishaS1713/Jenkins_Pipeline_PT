@@ -60,25 +60,16 @@ pipeline {
         script {
             if (fileExists('performance-result.jtl')) {
 
-                def output = bat(
-                    script: '''
-                    @echo off
-                    powershell -Command ^
-                    "$data = Import-Csv 'performance-result.jtl'; ^
-                    $total = $data.Count; ^
-                    $success = ($data | Where-Object {$_.success -eq 'true'}).Count; ^
-                    Write-Output ($total.ToString() + '|' + $success.ToString())"
-                    ''',
-                    returnStdout: true
-                ).trim()
+                def lines = readFile('performance-result.jtl').split('\n')
 
-                def cleanOutput = output.tokenize('\\n')[-1].trim()
+                // Remove header
+                def dataLines = lines.drop(1)
 
-                echo "Raw Output: ${cleanOutput}"
+                def total = dataLines.size()
+                def success = dataLines.count { it.contains(',true,') }
 
-                def parts = cleanOutput.split('\\|')
-                env.TOTAL = parts[0]
-                env.SUCCESS = parts[1]
+                env.TOTAL = total.toString()
+                env.SUCCESS = success.toString()
 
                 echo "Total Requests: ${env.TOTAL}"
                 echo "Successful Requests: ${env.SUCCESS}"
