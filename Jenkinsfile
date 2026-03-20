@@ -56,13 +56,7 @@ pipeline {
         script {
             if (fileExists('performance-result.jtl')) {
                 bat '''
-                powershell -Command "
-                $data = Import-Csv 'performance-result.jtl';
-                $total = $data.Count;
-                $success = ($data | Where-Object {$_.success -eq 'true'}).Count;
-                Write-Output ('Total Requests: ' + $total);
-                Write-Output ('Successful Requests: ' + $success)
-                "
+                powershell -Command "$data = Import-Csv 'performance-result.jtl'; $total = $data.Count; $success = ($data | Where-Object {$_.success -eq 'true'}).Count; Write-Output ('Total Requests: ' + $total); Write-Output ('Successful Requests: ' + $success)"
                 '''
             }
         }
