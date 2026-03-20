@@ -63,7 +63,7 @@ pipeline {
                 def output = bat(
                     script: '''
                     @echo off
-                    powershell -Command "$data = Import-Csv 'performance-result.jtl'; $total = $data.Count; $success = ($data | Where-Object {$_.success -eq 'true'}).Count; Write-Output \"$total,$success\""
+                    powershell -Command "$data = Import-Csv 'performance-result.jtl'; $total = $data.Count; $success = ($data | Where-Object {$_.success -eq 'true'}).Count; Write-Output \"$total|$success\""
                     ''',
                     returnStdout: true
                 ).trim()
@@ -72,15 +72,9 @@ pipeline {
 
                 echo "Raw Output: ${cleanOutput}"
 
-                if (cleanOutput.contains(',')) {
-                    def parts = cleanOutput.split(',')
-                    env.TOTAL = parts[0]
-                    env.SUCCESS = parts[1]
-                } else {
-                    // fallback if parsing fails
-                    env.TOTAL = cleanOutput
-                    env.SUCCESS = "0"
-                }
+                def parts = cleanOutput.split('\\|')
+                env.TOTAL = parts[0]
+                env.SUCCESS = parts[1]
 
                 echo "Total Requests: ${env.TOTAL}"
                 echo "Successful Requests: ${env.SUCCESS}"
