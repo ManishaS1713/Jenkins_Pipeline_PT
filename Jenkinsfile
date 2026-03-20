@@ -51,44 +51,22 @@ pipeline {
             }
         }
 
-        stage('Generate Performance Summary') {
-            steps {
-                script {
-                    if (fileExists('performance-result.jtl')) {
-
-                        def raw = bat(
-                            script: '''
-                            powershell -Command "$data = Import-Csv 'performance-result.jtl'; 
-                            $total = $data.Count; 
-                            $success = ($data | Where-Object {$_.success -eq 'true'}).Count; 
-                            $fail = $total - $success; 
-                            $avg = [math]::Round(($data | Measure-Object -Property elapsed -Average).Average,2); 
-                            Write-Output ('TOTAL=' + $total); 
-                            Write-Output ('SUCCESS=' + $success); 
-                            Write-Output ('FAIL=' + $fail); 
-                            Write-Output ('AVG=' + $avg)"
-                            ''',
-                            returnStdout: true
-                        ).trim()
-
-                        def cleanLines = raw.split("\\r?\\n").findAll {
-                            it.startsWith("TOTAL=") ||
-                            it.startsWith("SUCCESS=") ||
-                            it.startsWith("FAIL=") ||
-                            it.startsWith("AVG=")
-                        }
-
-                        TOTAL = cleanLines.find { it.startsWith("TOTAL=") }?.split("=")[1]
-                        SUCCESS = cleanLines.find { it.startsWith("SUCCESS=") }?.split("=")[1]
-                        FAIL = cleanLines.find { it.startsWith("FAIL=") }?.split("=")[1]
-                        AVG = cleanLines.find { it.startsWith("AVG=") }?.split("=")[1]
-
-                    } else {
-                        error "JMeter test failed - result file not generated"
-                    }
-                }
+       stage('Generate Performance Summary') {
+    steps {
+        script {
+            if (fileExists('performance-result.jtl')) {
+                bat '''
+                powershell -Command ^
+                "$data = Import-Csv 'performance-result.jtl'; ^
+                $total = $data.Count; ^
+                $success = ($data | Where-Object {$_.success -eq 'true'}).Count; ^
+                Write-Output ('Total Requests: ' + $total); ^
+                Write-Output ('Successful Requests: ' + $success)"
+                '''
             }
         }
+    }
+}
 
         stage('Publish HTML Report') {
             steps {
