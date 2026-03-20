@@ -108,7 +108,7 @@ pipeline {
                     <p><b>Successful Requests:</b> ${env.SUCCESS}</p>
                     <p>Check detailed report in Jenkins.</p>
                     """,
-                    to: "manishas@ivavsys.com",
+                    to: "manishas@ivavsys.com,nikhil@ivavsys.com,rutuja@ivavsys.com,bhavana@ivavsys.com,geeta@ivavsys.com",
                     mimeType: 'text/html'
                 )
             }
