@@ -63,7 +63,11 @@ pipeline {
                 def output = bat(
                     script: '''
                     @echo off
-                    powershell -Command "$data = Import-Csv 'performance-result.jtl'; $total = $data.Count; $success = ($data | Where-Object {$_.success -eq 'true'}).Count; Write-Output \"$total|$success\""
+                    powershell -Command ^
+                    "$data = Import-Csv 'performance-result.jtl'; ^
+                    $total = $data.Count; ^
+                    $success = ($data | Where-Object {$_.success -eq 'true'}).Count; ^
+                    Write-Output ($total.ToString() + '|' + $success.ToString())"
                     ''',
                     returnStdout: true
                 ).trim()
