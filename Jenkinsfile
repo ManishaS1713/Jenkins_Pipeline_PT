@@ -1,10 +1,9 @@
 pipeline {
-
     agent any
 
     environment {
-        PT_REPO = 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'
-        JMETER_SLAVES = '192.168.0.147'
+        JMETER_HOME = 'C:\\Jmeter\\apache-jmeter-5.6.3'
+        SLAVE_IP = '192.168.0.147'
     }
 
     stages {
@@ -15,57 +14,66 @@ pipeline {
             }
         }
 
-        stage('Verify JMeter') {
+        stage('Checkout Code') {
             steps {
-                bat '''
-                SET JMETER_HOME=C:\\Jmeter\\apache-jmeter-5.6.3
-                C:\\Jmeter\\apache-jmeter-5.6.3\\bin\\jmeter.bat -v
-                '''
+                git credentialsId: 'PT_PipelineToken',
+                    url: 'https://github.com/ManishaS1713/Jenkins_Pipeline_PT.git'
             }
         }
 
-        stage('Checkout Performance Code') {
+        stage('Verify JMeter') {
             steps {
-                git branch: 'main',
-                    url: "${PT_REPO}",
-                    credentialsId: 'PT_PipelineToken'
+                bat '''
+                SET JMETER_HOME=%JMETER_HOME%
+                %JMETER_HOME%\\bin\\jmeter.bat -v
+                '''
             }
         }
 
         stage('Run Distributed Performance Test') {
             steps {
                 bat '''
-                SET JMETER_HOME=C:\\Jmeter\\apache-jmeter-5.6.3
+                SET JMETER_HOME=%JMETER_HOME%
 
                 IF EXIST performance-result.jtl del performance-result.jtl
                 IF EXIST performance-report rmdir /s /q performance-report
 
-                REM Running JMeter Distributed Test
-
-                C:\\Jmeter\\apache-jmeter-5.6.3\\bin\\jmeter.bat -n ^
+                %JMETER_HOME%\\bin\\jmeter.bat -n ^
                 -t prefScale.jmx ^
                 -l performance-result.jtl ^
                 -e -o performance-report ^
-                -R 192.168.0.147
+                -R %SLAVE_IP% ^
+                -Jjmeter.save.saveservice.output_format=csv
                 '''
             }
         }
 
-       stage('Generate Performance Summary') {
-    steps {
-        script {
-            if (fileExists('performance-result.jtl')) {
-                bat '''
-                powershell -Command "$data = Import-Csv 'performance-result.jtl'; $total = $data.Count; $success = ($data | Where-Object {$_.success -eq 'true'}).Count; Write-Output ('Total Requests: ' + $total); Write-Output ('Successful Requests: ' + $success)"
-                '''
+        stage('Generate Performance Summary') {
+            steps {
+                script {
+                    if (fileExists('performance-result.jtl')) {
+
+                        def output = bat(
+                            script: '''
+                            powershell -Command "$data = Import-Csv 'performance-result.jtl'; $total = $data.Count; $success = ($data | Where-Object {$_.success -eq 'true'}).Count; Write-Output \"$total,$success\""
+                            ''',
+                            returnStdout: true
+                        ).trim()
+
+                        def parts = output.split(',')
+                        env.TOTAL = parts[0]
+                        env.SUCCESS = parts[1]
+
+                        echo "Total Requests: ${env.TOTAL}"
+                        echo "Successful Requests: ${env.SUCCESS}"
+                    }
+                }
             }
         }
-    }
-}
 
         stage('Publish HTML Report') {
             steps {
-                publishHTML([
+                publishHTML(target: [
                     reportDir: 'performance-report',
                     reportFiles: 'index.html',
                     reportName: 'JMeter Performance Report',
@@ -78,24 +86,29 @@ pipeline {
 
         stage('Email After Performance') {
             steps {
-                script {
-                    emailext(
-                        subject: "Distributed JMeter Report",
-                        body: """
-<h3>Performance Test Completed 🚀</h3>
-
-<b>Total Requests:</b> ${TOTAL} <br>
-<b>Success:</b> ${SUCCESS} <br>
-<b>Failures:</b> ${FAIL} <br>
-<b>Avg Response Time:</b> ${AVG} ms <br>
-
-<a href="${BUILD_URL}">View Report</a>
-""",
-                        to: 'manishas@ivavsys.com',
-                        mimeType: 'text/html'
-                    )
-                }
+                emailext(
+                    subject: "JMeter Test Result - Build #${BUILD_NUMBER}",
+                    body: """
+                    <h3>Performance Test Summary</h3>
+                    <p><b>Total Requests:</b> ${env.TOTAL}</p>
+                    <p><b>Successful Requests:</b> ${env.SUCCESS}</p>
+                    <p>Check detailed report in Jenkins.</p>
+                    """,
+                    to: "your-email@example.com"
+                )
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline execution completed.'
+        }
+        success {
+            echo 'Performance test passed successfully!'
+        }
+        failure {
+            echo 'Performance test failed!'
         }
     }
 }
