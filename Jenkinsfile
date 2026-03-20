@@ -60,13 +60,21 @@ pipeline {
         script {
             if (fileExists('performance-result.jtl')) {
 
-                def lines = readFile('performance-result.jtl').split('\n')
+                def content = readFile('performance-result.jtl')
+                def lines = content.split('\n')
 
-                // Remove header
-                def dataLines = lines.drop(1)
+                int total = 0
+                int success = 0
 
-                def total = dataLines.size()
-                def success = dataLines.count { it.contains(',true,') }
+                // Start from index 1 to skip header
+                for (int i = 1; i < lines.length; i++) {
+                    if (lines[i].trim()) {
+                        total++
+                        if (lines[i].contains(',true,')) {
+                            success++
+                        }
+                    }
+                }
 
                 env.TOTAL = total.toString()
                 env.SUCCESS = success.toString()
@@ -77,7 +85,6 @@ pipeline {
         }
     }
 }
-
         stage('Publish HTML Report') {
             steps {
                 publishHTML(target: [
